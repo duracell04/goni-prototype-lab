@@ -13,3 +13,15 @@ routing:
     escalate_if:
       - task: longform
         confidence_below: 0.55
+  frugal_sovereign:
+    enabled: true
+    block_private_raw_cloud: true
+    remote_allowed_privacy_classes:
+      - public
+    route_order:
+      - rule_cache_memory
+      - local_small
+      - local_large
+      - local_tools_rag
+      - local_multi_agent_check
+      - cloud_council

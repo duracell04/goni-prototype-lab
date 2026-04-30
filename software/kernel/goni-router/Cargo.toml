@@ -9,3 +9,6 @@ goni-types = { path = "../goni-types" }
 serde = { workspace = true }
 serde_yaml = { workspace = true }
 anyhow = "1"
+
+[dev-dependencies]
+tokio = { workspace = true }
