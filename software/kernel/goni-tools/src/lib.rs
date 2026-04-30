@@ -72,6 +72,7 @@ impl ToolExecutor {
             capability_id: Some(call.capability_token_id),
             input_hash: hex::encode(call.args_hash()),
             output_hash: hex::encode([0u8; 32]),
+            llm_route: None,
             prev_hash: None,
             chain_hash: String::new(),
         };

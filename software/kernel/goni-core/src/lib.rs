@@ -2,7 +2,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use goni_context::{record_batch_to_candidate_chunks, CandidateChunk, ContextSelector, KvPager};
 use goni_infer::{LlmEngine, TokenStream};
-use goni_router::{EscalationPolicy, Router};
+use goni_router::{EscalationPolicy, Router, RoutingDecision};
 use goni_sched::Scheduler;
 use goni_store::DataPlane;
 use goni_types::{ContextSelection, LlmRequest, TaskClass};
@@ -13,7 +13,12 @@ use uuid::Uuid;
 struct PendingRequest {
     prompt: String,
     class: TaskClass,
-    tx: oneshot::Sender<anyhow::Result<TokenStream>>,
+    tx: oneshot::Sender<anyhow::Result<QueryTrace>>,
+}
+
+pub struct QueryTrace {
+    pub stream: TokenStream,
+    pub routing: RoutingDecision,
 }
 
 /// The orchestrator/kernel: wires the planes together.
@@ -56,6 +61,14 @@ impl GoniKernel {
     /// Important: this method does **not** call the LLM directly.
     /// The LLM is invoked by the scheduler executor loop (see `run_scheduler_loop`).
     pub async fn handle_user_query(&self, prompt: &str, class: TaskClass) -> anyhow::Result<TokenStream> {
+        Ok(self.handle_user_query_with_trace(prompt, class).await?.stream)
+    }
+
+    pub async fn handle_user_query_with_trace(
+        &self,
+        prompt: &str,
+        class: TaskClass,
+    ) -> anyhow::Result<QueryTrace> {
         let (batch_id, rx) = self.submit_user_query(prompt, class).await?;
         // In MVP, if the executor loop is not running, run one step inline.
         // This keeps CLI/dev usage working while preserving the architectural boundary.
@@ -65,12 +78,13 @@ impl GoniKernel {
         rx.await?
     }
 
-    /// Submit a user query into the scheduler and return a oneshot that yields the token stream.
+    /// Submit a user query into the scheduler and return a oneshot that yields
+    /// the token stream plus routing metadata.
     pub async fn submit_user_query(
         &self,
         prompt: &str,
         class: TaskClass,
-    ) -> anyhow::Result<(Uuid, oneshot::Receiver<anyhow::Result<TokenStream>>)> {
+    ) -> anyhow::Result<(Uuid, oneshot::Receiver<anyhow::Result<QueryTrace>>)> {
         let batch_id = Uuid::new_v4();
         let (tx, rx) = oneshot::channel();
 
@@ -115,7 +129,7 @@ impl GoniKernel {
         };
         let Some(req) = pending else { return; };
 
-        let result = self.solve_prompt(&req.prompt, req.class).await;
+        let result = self.solve_prompt_with_trace(&req.prompt, req.class).await;
         let _ = req.tx.send(result);
     }
 
@@ -129,6 +143,10 @@ impl GoniKernel {
     }
 
     async fn solve_prompt(&self, prompt: &str, _class: TaskClass) -> anyhow::Result<TokenStream> {
+        Ok(self.solve_prompt_with_trace(prompt, _class).await?.stream)
+    }
+
+    async fn solve_prompt_with_trace(&self, prompt: &str, _class: TaskClass) -> anyhow::Result<QueryTrace> {
         // Deterministic lexical embedding baseline.
         let emb_dim: usize = std::env::var("EMBED_DIM")
             .ok()
@@ -232,6 +250,65 @@ impl GoniKernel {
         };
 
         let stream = self.llm_engine.generate(req).await?;
-        Ok(stream)
+        Ok(QueryTrace { stream, routing })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use goni_context::{FacilityLocationSelector, NullKvPager};
+    use goni_infer::NullLlmEngine;
+    use goni_router::ConfigRouter;
+    use goni_sched::InMemoryScheduler;
+    use goni_store::NullDataPlane;
+
+    #[tokio::test]
+    async fn traced_query_preserves_routing_metadata() {
+        let kernel = GoniKernel::new(
+            Arc::new(NullDataPlane),
+            Arc::new(FacilityLocationSelector::new(0.3)),
+            Arc::new(NullKvPager),
+            Arc::new(InMemoryScheduler::new()),
+            Arc::new(
+                ConfigRouter::from_path(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/../../../config/router.yaml"
+                ))
+                .unwrap(),
+            ),
+            Arc::new(NullLlmEngine),
+        );
+
+        let traced = kernel
+            .handle_user_query_with_trace("Draft a friendly reminder.", TaskClass::Interactive)
+            .await
+            .unwrap();
+
+        assert_eq!(traced.routing.selected_route, "local_small");
+        assert_eq!(traced.routing.policy_decision, "allowed");
+    }
+
+    #[tokio::test]
+    async fn legacy_query_api_still_returns_stream() {
+        let kernel = GoniKernel::new(
+            Arc::new(NullDataPlane),
+            Arc::new(FacilityLocationSelector::new(0.3)),
+            Arc::new(NullKvPager),
+            Arc::new(InMemoryScheduler::new()),
+            Arc::new(
+                ConfigRouter::from_path(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/../../../config/router.yaml"
+                ))
+                .unwrap(),
+            ),
+            Arc::new(NullLlmEngine),
+        );
+
+        let _stream = kernel
+            .handle_user_query("Draft a friendly reminder.", TaskClass::Interactive)
+            .await
+            .unwrap();
     }
 }

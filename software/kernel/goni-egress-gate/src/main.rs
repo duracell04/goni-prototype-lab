@@ -82,6 +82,7 @@ async fn fetch(
         capability_id: Some(Uuid::new_v5(&Uuid::NAMESPACE_OID, req.capability_token.as_bytes())),
         input_hash: "".into(),
         output_hash: "".into(),
+        llm_route: None,
         prev_hash: None,
         chain_hash: "".into(),
     };

@@ -11,7 +11,7 @@ use sha2::{Digest, Sha256};
 use goni_core::GoniKernel;
 use goni_context::{FacilityLocationSelector, NullKvPager};
 use goni_infer::{HttpVllmEngine, NullLlmEngine};
-use goni_receipts::{Receipt, ReceiptLog};
+use goni_receipts::{LlmRouteReceipt, Receipt, ReceiptLog};
 use goni_router::{ConfigRouter, NullRouter, Router};
 use goni_sched::InMemoryScheduler;
 use goni_store::{InMemorySpineDataPlane, MultiDataPlane, NullDataPlane, QdrantDataPlane};
@@ -157,11 +157,13 @@ async fn chat_completions(
 
     let max_tokens = req.max_tokens.unwrap_or(256);
 
-    let mut stream = state
+    let traced = state
         .kernel
-        .handle_user_query(&prompt, TaskClass::Interactive)
+        .handle_user_query_with_trace(&prompt, TaskClass::Interactive)
         .await
         .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let routing = traced.routing;
+    let mut stream = traced.stream;
 
     let mut full_text = String::new();
     while let Some(tok_res) = stream.next().await {
@@ -199,6 +201,24 @@ async fn chat_completions(
         capability_id: None,
         input_hash,
         output_hash,
+        llm_route: Some(LlmRouteReceipt {
+            selected_route: routing.selected_route,
+            local_rationale: routing.local_rationale,
+            council_rationale: routing.council_rationale,
+            task_difficulty: routing.classification.task_difficulty,
+            knowledge_locality: routing.classification.knowledge_locality,
+            sensitivity: routing.classification.sensitivity,
+            compute_budget: routing.classification.compute_budget,
+            risk: routing.classification.risk,
+            models_considered: routing.models_considered,
+            models_used: routing.models_used,
+            redaction_required: routing.redaction_required,
+            privacy_class_sent: routing.privacy_class_sent,
+            cost_estimate: routing.cost_estimate,
+            latency_estimate: routing.latency_estimate,
+            quality_confidence: routing.quality_confidence,
+            policy_decision: routing.policy_decision,
+        }),
         prev_hash: None,
         chain_hash: String::new(),
     };
