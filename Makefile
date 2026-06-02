@@ -1,6 +1,6 @@
 SHELL := /usr/bin/env bash
 
-COMPOSE_FILE := software/docker-compose.yml
+COMPOSE_FILE := deploy/docker-compose.yml
 
 .PHONY: up down logs doctor smoke demo bench test lint
 

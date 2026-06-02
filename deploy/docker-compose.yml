@@ -55,7 +55,7 @@ services:
 
   orchestrator:
     build:
-      context: ./kernel
+      context: ../software/kernel
       dockerfile: Dockerfile
     container_name: goni-orchestrator
     image: ghcr.io/duracell04/goni-http:latest
@@ -86,7 +86,7 @@ services:
 
   egress-gate:
     build:
-      context: ./kernel
+      context: ../software/kernel
       dockerfile: Dockerfile.egress
     container_name: goni-egress-gate
     environment:

@@ -13,8 +13,8 @@ Goal: prove the Arrow spine + deterministic selector + local inference on real r
 
 ## Quickstart
 ```bash
-# 1) Start stack (local-only)
-docker-compose -f blueprint/software/docker-compose.yml up
+# 1) Start stack from the repo root (local-only)
+docker compose -f deploy/docker-compose.yml up
 
 # 2) Ingest docs
 python blueprint/prototype/01-rag-slice/ingest.py --src ./docs ./hardware ./software ./docs/assets/ai-2027 \
