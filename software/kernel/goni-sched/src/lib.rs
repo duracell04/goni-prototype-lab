@@ -2,10 +2,8 @@ use std::collections::VecDeque;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use goni_types::{GoniBatch, TaskClass, BatchMeta};
+use goni_types::{GoniBatch, TaskClass};
 use tokio::sync::Mutex;
-use arrow::record_batch::RecordBatch;
-use arrow::datatypes::Schema;
 
 /// Core scheduling interface.
 #[async_trait]
@@ -25,6 +23,12 @@ pub struct InMemoryScheduler {
     inner: Mutex<Inner>,
 }
 
+impl Default for InMemoryScheduler {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 struct Inner {
     queues: [VecDeque<Arc<GoniBatch>>; 3],
     weights: [f64; 3], // w_int, w_bg, w_maint
@@ -34,11 +38,7 @@ impl InMemoryScheduler {
     pub fn new() -> Self {
         Self {
             inner: Mutex::new(Inner {
-                queues: [
-                    VecDeque::new(),
-                    VecDeque::new(),
-                    VecDeque::new(),
-                ],
+                queues: [VecDeque::new(), VecDeque::new(), VecDeque::new()],
                 weights: [1000.0, 10.0, 1.0],
             }),
         }
@@ -128,7 +128,11 @@ impl Scheduler for QoSScheduler {
 
     async fn next(&self) -> Option<GoniBatch> {
         let mut inner = self.inner.lock().await;
-        let order = [TaskClass::Interactive, TaskClass::Background, TaskClass::Maintenance];
+        let order = [
+            TaskClass::Interactive,
+            TaskClass::Background,
+            TaskClass::Maintenance,
+        ];
         for class in order {
             let idx = idx_for(class);
             if let Some(batch) = inner.queues[idx].pop_front() {
@@ -142,6 +146,9 @@ impl Scheduler for QoSScheduler {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use arrow::datatypes::Schema;
+    use arrow::record_batch::RecordBatch;
+    use goni_types::BatchMeta;
     use std::sync::Arc;
 
     fn dummy_batch(class: TaskClass) -> GoniBatch {
@@ -161,8 +168,14 @@ mod tests {
     #[tokio::test]
     async fn interactive_preferred_over_background() {
         let sched = InMemoryScheduler::new();
-        sched.submit(dummy_batch(TaskClass::Background)).await.unwrap();
-        sched.submit(dummy_batch(TaskClass::Interactive)).await.unwrap();
+        sched
+            .submit(dummy_batch(TaskClass::Background))
+            .await
+            .unwrap();
+        sched
+            .submit(dummy_batch(TaskClass::Interactive))
+            .await
+            .unwrap();
 
         let first = sched.next().await.expect("should pop a batch");
         assert_eq!(first.meta.class, TaskClass::Interactive);
@@ -175,4 +188,3 @@ mod tests {
         assert!(res.is_err());
     }
 }
-

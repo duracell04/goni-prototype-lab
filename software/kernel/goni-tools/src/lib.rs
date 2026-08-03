@@ -50,7 +50,11 @@ impl ToolExecutor {
         policy: PolicyEngine,
         receipts: ReceiptLog,
     ) -> Self {
-        Self { data_plane, policy, receipts }
+        Self {
+            data_plane,
+            policy,
+            receipts,
+        }
     }
 
     pub async fn execute(

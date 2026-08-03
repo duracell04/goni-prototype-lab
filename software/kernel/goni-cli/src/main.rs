@@ -31,7 +31,10 @@ enum Command {
 
 #[derive(Subcommand)]
 enum ReceiptCommand {
-    Tail { #[arg(long, default_value_t = 10)] lines: usize },
+    Tail {
+        #[arg(long, default_value_t = 10)]
+        lines: usize,
+    },
     Verify,
 }
 

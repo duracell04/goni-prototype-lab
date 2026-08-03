@@ -108,13 +108,15 @@ struct ModelConfig {
 
 #[derive(Clone, Debug, Deserialize)]
 struct RoutingConfig {
-    local_first: Option<LocalFirstConfig>,
+    #[serde(rename = "local_first")]
+    _local_first: Option<LocalFirstConfig>,
     frugal_sovereign: Option<FrugalSovereignConfig>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
 struct LocalFirstConfig {
-    target_local_token_ratio: Option<f32>,
+    #[serde(rename = "target_local_token_ratio")]
+    _target_local_token_ratio: Option<f32>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -191,7 +193,13 @@ impl ConfigRouter {
         let word_count = prompt.split_whitespace().count();
         let task_difficulty = if contains_any(
             &text,
-            &["audit-grade", "audit grade", "legal", "financial", "medical"],
+            &[
+                "audit-grade",
+                "audit grade",
+                "legal",
+                "financial",
+                "medical",
+            ],
         ) {
             "audit_grade"
         } else if contains_any(&text, &["strategy", "research", "architecture", "complex"]) {
@@ -227,17 +235,14 @@ impl ConfigRouter {
         let sensitivity = if contains_any(
             &text,
             &[
-                "password",
-                "secret",
-                "api key",
-                "token",
-                "ssn",
-                "identity",
-                "medical",
+                "password", "secret", "api key", "token", "ssn", "identity", "medical",
             ],
         ) {
             "legal_financial_identity_sensitive"
-        } else if contains_any(&text, &["private", "personal", "confidential", "legal", "financial"]) {
+        } else if contains_any(
+            &text,
+            &["private", "personal", "confidential", "legal", "financial"],
+        ) {
             "private"
         } else {
             "public"
@@ -245,7 +250,9 @@ impl ConfigRouter {
 
         let compute_budget = if word_count > self.quality_token_budget() {
             "requires_cloud_for_time_reasons"
-        } else if word_count > self.interactive_token_budget() || context.total_tokens > self.interactive_token_budget() {
+        } else if word_count > self.interactive_token_budget()
+            || context.total_tokens > self.interactive_token_budget()
+        {
             "can_run_locally_soon"
         } else {
             "can_run_locally_now"
@@ -279,9 +286,8 @@ impl ConfigRouter {
             || classification.task_difficulty == "audit_grade"
             || classification.compute_budget == "requires_cloud_for_time_reasons";
         let privacy_allows_remote = self.remote_allows_privacy_class(&classification.sensitivity);
-        let raw_cloud_blocked = self.block_private_raw_cloud()
-            && needs_remote
-            && !privacy_allows_remote;
+        let raw_cloud_blocked =
+            self.block_private_raw_cloud() && needs_remote && !privacy_allows_remote;
 
         if needs_remote {
             models_considered.push(remote.clone());
@@ -411,8 +417,11 @@ mod tests {
     use super::*;
 
     fn router() -> ConfigRouter {
-        ConfigRouter::from_path(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../config/router.yaml"))
-            .unwrap()
+        ConfigRouter::from_path(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../../config/router.yaml"
+        ))
+        .unwrap()
     }
 
     fn empty_context() -> ContextSelection {
@@ -424,7 +433,9 @@ mod tests {
 
     #[tokio::test]
     async fn routine_prompt_stays_local_small() {
-        let (decision, _) = router().decide("Draft a friendly follow-up reminder.", &empty_context()).await;
+        let (decision, _) = router()
+            .decide("Draft a friendly follow-up reminder.", &empty_context())
+            .await;
         assert_eq!(decision.chosen_tier, ModelTier::LocalSmall);
         assert_eq!(decision.selected_route, "local_small");
         assert_eq!(decision.policy_decision, "allowed");
@@ -432,7 +443,10 @@ mod tests {
 
     #[tokio::test]
     async fn long_prompt_routes_local_large() {
-        let prompt = std::iter::repeat("token").take(300).collect::<Vec<_>>().join(" ");
+        let prompt = std::iter::repeat("token")
+            .take(300)
+            .collect::<Vec<_>>()
+            .join(" ");
         let (decision, _) = router().decide(&prompt, &empty_context()).await;
         assert_eq!(decision.chosen_tier, ModelTier::LocalLarge);
         assert_eq!(decision.selected_route, "local_large");
@@ -441,7 +455,10 @@ mod tests {
     #[tokio::test]
     async fn public_current_web_prompt_routes_remote_heavy() {
         let (decision, _) = router()
-            .decide("Research the latest public paper on LLM routing.", &empty_context())
+            .decide(
+                "Research the latest public paper on LLM routing.",
+                &empty_context(),
+            )
             .await;
         assert_eq!(decision.chosen_tier, ModelTier::RemoteHeavy);
         assert_eq!(decision.selected_route, "local_first_then_council");
@@ -451,7 +468,10 @@ mod tests {
     #[tokio::test]
     async fn private_current_web_prompt_blocks_raw_cloud() {
         let (decision, _) = router()
-            .decide("Use my private notes and latest web sources for this legal strategy.", &empty_context())
+            .decide(
+                "Use my private notes and latest web sources for this legal strategy.",
+                &empty_context(),
+            )
             .await;
         assert_eq!(decision.chosen_tier, ModelTier::LocalLarge);
         assert_eq!(decision.policy_decision, "blocked");

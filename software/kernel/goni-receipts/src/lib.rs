@@ -67,7 +67,10 @@ impl ReceiptLog {
     }
 
     pub fn append(&self, mut receipt: Receipt) -> Result<(), ReceiptError> {
-        let mut last = self.last_hash.lock().map_err(|_| ReceiptError::Io("lock".into()))?;
+        let mut last = self
+            .last_hash
+            .lock()
+            .map_err(|_| ReceiptError::Io("lock".into()))?;
         receipt.prev_hash = last.clone();
         receipt.chain_hash = hash_receipt(&receipt);
 
@@ -76,7 +79,8 @@ impl ReceiptLog {
             .append(true)
             .open(&self.path)
             .map_err(|e| ReceiptError::Io(e.to_string()))?;
-        let line = serde_json::to_string(&receipt).map_err(|e| ReceiptError::Parse(e.to_string()))?;
+        let line =
+            serde_json::to_string(&receipt).map_err(|e| ReceiptError::Parse(e.to_string()))?;
         writeln!(file, "{line}").map_err(|e| ReceiptError::Io(e.to_string()))?;
         *last = Some(receipt.chain_hash.clone());
         Ok(())
@@ -89,7 +93,8 @@ pub fn verify_log(path: impl AsRef<Path>) -> Result<(), ReceiptError> {
     let mut prev: Option<String> = None;
     for line in reader.lines() {
         let line = line.map_err(|e| ReceiptError::Io(e.to_string()))?;
-        let receipt: Receipt = serde_json::from_str(&line).map_err(|e| ReceiptError::Parse(e.to_string()))?;
+        let receipt: Receipt =
+            serde_json::from_str(&line).map_err(|e| ReceiptError::Parse(e.to_string()))?;
         if receipt.prev_hash != prev {
             return Err(ReceiptError::Parse("hash chain mismatch".into()));
         }
@@ -133,7 +138,8 @@ fn read_last_hash(path: &Path) -> Result<Option<String>, ReceiptError> {
     let mut last: Option<String> = None;
     for line in reader.lines() {
         let line = line.map_err(|e| ReceiptError::Io(e.to_string()))?;
-        let receipt: Receipt = serde_json::from_str(&line).map_err(|e| ReceiptError::Parse(e.to_string()))?;
+        let receipt: Receipt =
+            serde_json::from_str(&line).map_err(|e| ReceiptError::Parse(e.to_string()))?;
         last = Some(receipt.chain_hash);
     }
     Ok(last)
@@ -146,9 +152,8 @@ mod tests {
 
     #[test]
     fn receipt_chain_verifies() {
-        let path = "target/test_receipts.jsonl";
-        let _ = fs::remove_file(path);
-        let log = ReceiptLog::open(path).unwrap();
+        let path = std::env::temp_dir().join(format!("goni-receipts-{}.jsonl", Uuid::new_v4()));
+        let log = ReceiptLog::open(&path).unwrap();
         let r1 = Receipt {
             receipt_id: Uuid::new_v4(),
             timestamp: "t1".into(),
@@ -162,7 +167,8 @@ mod tests {
             chain_hash: "".into(),
         };
         log.append(r1).unwrap();
-        verify_log(path).unwrap();
+        verify_log(&path).unwrap();
+        fs::remove_file(path).unwrap();
     }
 
     #[test]

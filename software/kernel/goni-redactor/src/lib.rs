@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use goni_classifier::DataClass;
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RedactionProfile {

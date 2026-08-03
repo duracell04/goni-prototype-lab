@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 
-pub mod plane;
 pub mod macros;
+pub mod plane;
 
 use plane::Plane;
 

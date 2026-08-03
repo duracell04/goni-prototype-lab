@@ -1,11 +1,7 @@
-use std::pin::Pin;
-
 use async_trait::async_trait;
 use futures_util::{stream, StreamExt};
 use goni_types::LlmRequest;
 use serde::{Deserialize, Serialize};
-
-type DynStream = Pin<Box<dyn futures_core::Stream<Item = Result<crate::LlmToken, crate::LlmError>> + Send>>;
 
 use crate::{LlmEngine, LlmError, LlmToken, TokenStream};
 
@@ -34,7 +30,8 @@ struct ChatCompletionChunk {
 struct ChatChoiceDelta {
     delta: Delta,
     #[serde(default)]
-    index: usize,
+    #[serde(rename = "index")]
+    _index: usize,
 }
 
 #[derive(Deserialize)]
@@ -66,10 +63,7 @@ impl HttpVllmEngine {
 
 #[async_trait]
 impl LlmEngine for HttpVllmEngine {
-    async fn generate(
-        &self,
-        req: LlmRequest,
-    ) -> Result<TokenStream, LlmError> {
+    async fn generate(&self, req: LlmRequest) -> Result<TokenStream, LlmError> {
         let url = format!("{}/chat/completions", self.base_url);
 
         let body = OpenAIChatRequest {
@@ -146,10 +140,9 @@ impl LlmEngine for HttpVllmEngine {
             }
         });
 
-        // Flatten the stream of streams
-        let flat_stream = s
-            .map(|maybe_stream| maybe_stream.unwrap_or_else(|| stream::empty()))
-            .flatten();
+        // `filter_map` has already removed empty chunks, so each remaining item
+        // is a token stream rather than an optional token stream.
+        let flat_stream = s.flatten();
 
         Ok(Box::pin(flat_stream) as TokenStream)
     }

@@ -8,3 +8,6 @@ async-trait = { workspace = true }
 goni-types = { path = "../goni-types" }
 tokio = { workspace = true }
 arrow = { workspace = true }
+
+[dev-dependencies]
+uuid = { workspace = true }

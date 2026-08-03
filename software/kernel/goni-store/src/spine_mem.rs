@@ -16,6 +16,12 @@ pub struct InMemorySpineDataPlane {
     tables: Mutex<HashMap<String, Vec<ArrowBatchHandle>>>,
 }
 
+impl Default for InMemorySpineDataPlane {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl InMemorySpineDataPlane {
     pub fn new() -> Self {
         Self {

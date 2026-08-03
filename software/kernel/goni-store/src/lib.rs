@@ -26,10 +26,7 @@ pub struct DataError {
 #[async_trait]
 pub trait DataPlane: Send + Sync {
     /// Run a SQL-like query (DuckDB/DataFusion) and return Arrow batches.
-    async fn query(
-        &self,
-        sql: &str,
-    ) -> Result<Vec<ArrowBatchHandle>, DataError>;
+    async fn query(&self, sql: &str) -> Result<Vec<ArrowBatchHandle>, DataError>;
 
     /// Append batches into a logical table.
     async fn append_batches(
@@ -52,10 +49,7 @@ pub struct NullDataPlane;
 
 #[async_trait]
 impl DataPlane for NullDataPlane {
-    async fn query(
-        &self,
-        _sql: &str,
-    ) -> Result<Vec<ArrowBatchHandle>, DataError> {
+    async fn query(&self, _sql: &str) -> Result<Vec<ArrowBatchHandle>, DataError> {
         Ok(Vec::new())
     }
 
