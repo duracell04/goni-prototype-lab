@@ -2,8 +2,8 @@
   "version": 1,
   "canonical_repository": "https://github.com/duracell04/goni",
   "baseline_revision": "66b954ceb474004d6304fd1fb280804bae3e7e6b",
-  "final_revision": null,
-  "pin_state": "awaiting_final_migration_sha",
+  "final_revision": "1c1a0eeba186224a184f88f2fc1335a960eededb",
+  "pin_state": "pinned",
   "replacement_policy": {
     "placeholder": null,
     "required_revision_format": "full_lowercase_git_sha",
