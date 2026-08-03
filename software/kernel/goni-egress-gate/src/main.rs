@@ -60,9 +60,8 @@ async fn main() -> anyhow::Result<()> {
 
     let addr: SocketAddr = "0.0.0.0:8081".parse()?;
     println!("egress gate listening on {addr}");
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await?;
+    let listener = tokio::net::TcpListener::bind(addr).await?;
+    axum::serve(listener, app).await?;
     Ok(())
 }
 

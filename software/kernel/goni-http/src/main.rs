@@ -4,7 +4,7 @@ use std::sync::Arc;
 use axum::{
     extract::State,
     routing::{get, post},
-    Json, Router,
+    Json, Router as AxumRouter,
 };
 use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
@@ -129,7 +129,7 @@ async fn main() -> anyhow::Result<()> {
 
     let app_state = AppState { kernel, receipts };
 
-    let app = Router::new()
+    let app = AxumRouter::new()
         .route("/healthz", get(healthz))
         .route("/v1/chat/completions", post(chat_completions))
         .with_state(app_state)
@@ -137,9 +137,8 @@ async fn main() -> anyhow::Result<()> {
 
     let addr: SocketAddr = "0.0.0.0:7000".parse()?;
     println!("Goni orchestrator HTTP server listening on {addr}");
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await?;
+    let listener = tokio::net::TcpListener::bind(addr).await?;
+    axum::serve(listener, app).await?;
 
     Ok(())
 }
