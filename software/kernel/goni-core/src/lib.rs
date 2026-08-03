@@ -153,10 +153,6 @@ impl GoniKernel {
         }
     }
 
-    async fn solve_prompt(&self, prompt: &str, _class: TaskClass) -> anyhow::Result<TokenStream> {
-        Ok(self.solve_prompt_with_trace(prompt, _class).await?.stream)
-    }
-
     async fn solve_prompt_with_trace(
         &self,
         prompt: &str,
