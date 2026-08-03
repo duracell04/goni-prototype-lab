@@ -4,11 +4,14 @@ set -euo pipefail
 BASE_URL=${GONI_ORCH_URL:-http://localhost:7000}
 RECEIPT_FILE=${GONI_RECEIPTS_FILE:-./receipts.jsonl}
 QDRANT_URL=${QDRANT_HTTP_URL:-http://localhost:6333}
+REQUIRE_QDRANT=${GONI_SMOKE_REQUIRE_QDRANT:-1}
 
-curl -s "$BASE_URL/healthz" >/dev/null
-curl -s "$QDRANT_URL/healthz" >/dev/null
+curl -fsS "$BASE_URL/healthz" >/dev/null
+if [ "$REQUIRE_QDRANT" = "1" ]; then
+  curl -fsS "$QDRANT_URL/healthz" >/dev/null
+fi
 
-curl -s "$BASE_URL/v1/chat/completions" \
+curl -fsS "$BASE_URL/v1/chat/completions" \
   -H "Content-Type: application/json" \
   -d '{"model":"local","messages":[{"role":"user","content":"hello"}],"max_tokens":16}' \
   >/dev/null

@@ -1,73 +1,61 @@
-# Repo Reality Map (Spec vs Prototype vs Experiments)
+# Repository reality map
 
-## Definitions
-- Spec: normative design intent; not necessarily implemented
-- Prototype: runnable today; may be incomplete or unvalidated
-- Experiment: exploratory; not a platform commitment
+## Authority
 
-## Blessed Demo Path
-- Entry point: `deploy/docker-compose.yml`
-- Demo path excludes gateway; no gateway service is defined in compose or k8s overlays.
-- Kernel-only demo scope (orchestrator + llm-local + optional vecdb):
-  - Implemented (untested): `/v1/chat/completions` route in `software/kernel/goni-http/src/main.rs`
-  - Implemented and tested: context selector budget and determinism test `selector_respects_budget_and_is_deterministic` in `software/kernel/goni-context/src/lib.rs`
-  - Implemented and tested: TXT axiom guard (compile-time + runtime) in `software/kernel/goni-schema/src/macros.rs`; test in `software/kernel/goni-schema/tests/txt_axiom.rs`
-  - Implemented and tested: agent manifest parsing tests in `software/kernel/goni-agent/src/lib.rs`
-  - Implemented and tested: scheduler class preference test `interactive_preferred_over_background` in `software/kernel/goni-sched/src/lib.rs`
-  - Implemented (untested): demo scripts `scripts/demo.sh` and `scripts/smoke_test.sh`
+`duracell04/goni` is the canonical source for GONI propositions and status.
+This repository is an experimental lab. Its canonical baseline, final pin, and
+relevant node IDs are recorded in `canonical-basis.json`.
 
-## Plane Status (Snapshot)
-Use one status phrase per row: Implemented and tested / Implemented (untested) / Specified only / roadmap
+Experiments can produce repository-and-commit-pinned observations for review in
+`goni`. They cannot promote a node's status or redefine the canon.
 
-| Plane | Status | Evidence |
-|------|--------|----------|
-| Data (spine, schemas, axioms) | Implemented (untested) | `software/kernel/goni-schema/src/lib.rs`; `software/kernel/goni-schema/src/macros.rs`; `software/kernel/goni-schema/tests/txt_axiom.rs`; `software/kernel/goni-store/src/lib.rs`; `software/kernel/goni-store/src/spine_mem.rs`; `software/kernel/goni-store/src/qdrant.rs` |
-| Context selection | Implemented and tested | `software/kernel/goni-context/src/lib.rs` (`selector_respects_budget_and_is_deterministic`) |
-| Control (scheduler/router) | Implemented (untested) | `software/kernel/goni-sched/src/lib.rs` (basic ordering test); `software/kernel/goni-router/src/lib.rs`; `blueprint/30-specs/scheduler-and-interrupts.md` |
-| Execution (LLM blueprint/runtime/tools) | Implemented (untested) | `software/kernel/goni-infer/src/http_vllm.rs`; `software/kernel/goni-blueprint/tools/src/lib.rs`; `software/kernel/goni-http/src/main.rs` |
+## Status vocabulary
 
-## Governance and receipts
-- Receipts log: Implemented and tested (`software/kernel/goni-receipts/src/lib.rs`)
-- Policy engine: Implemented and tested (`software/kernel/goni-policy/src/lib.rs`)
-- Egress gate: Implemented (untested) (`software/kernel/goni-egress-gate/src/main.rs`)
+- **Specified only:** canonical design intent exists; this lab has no matching
+  implementation evidence.
+- **Implemented, untested here:** code exists, but no named passing test in this
+  repository supports the stated behavior.
+- **Implemented and tested within boundary:** a named test supports only the
+  stated component behavior, not the complete canonical proposition.
+- **Planned:** no testable implementation is present.
 
-## Demo Dependencies (Declare Truth)
-### Gateway
-- Status: Specified only / roadmap (not part of the demo path)
-- Evidence:
-  - Compose omits gateway: `deploy/docker-compose.yml`
-  - K8s overlays omit gateway: `deploy/k8s/overlays/single-node/kustomization.yaml`; `deploy/k8s/overlays/cluster/kustomization.yaml`
+## Demonstrated component boundaries
 
-### Egress gate
-- Status: Implemented (untested)
-- Evidence:
-  - `software/kernel/goni-egress-gate/src/main.rs`
-  - `deploy/docker-compose.yml` includes `egress-gate`
+| Component boundary | Lab status | Local evidence | Canonical node |
+|---|---|---|---|
+| Context selection stays within its budget and is deterministic for its fixture | Implemented and tested within boundary | `selector_respects_budget_and_is_deterministic` in `software/kernel/goni-context/src/lib.rs` | `ADR-INDEX-SW` |
+| TXT schema guard rejects the tested disallowed construction | Implemented and tested within boundary | `software/kernel/goni-schema/tests/txt_axiom.rs` | `PRIV-01` |
+| Agent manifest parser accepts the two tested manifest forms | Implemented and tested within boundary | parser tests in `software/kernel/goni-agent/src/lib.rs` | `AGENT-MANIFEST-01` |
+| Scheduler applies the tested class preference and background limit | Implemented and tested within boundary | tests in `software/kernel/goni-sched/src/lib.rs` | `SCHED-01` |
+| Receipt hash chain verifies the covered fixture | Implemented and tested within boundary | `receipt_chain_verifies` in `software/kernel/goni-receipts/src/lib.rs` | `REC-01` |
+| Policy helpers return the covered allow/deny decisions | Implemented and tested within boundary | unit tests in `software/kernel/goni-policy/src/lib.rs` | `TOOL-01`, `LSC-01`, `NET-01` |
+| HTTP completion route with local LLM stub | Implemented and smoke-tested within boundary | `scripts/run_smoke_local.sh` | `CI-VALIDATION-01` |
 
-### Frontend
-- Status: Specified only / roadmap (stub moved to blueprint/prototype/)
-- Evidence:
-  - Present: `blueprint/prototype/frontend-stub/`
+## Present but not established by tests
 
-### Goni Lab
-- Status: Implemented (untested)
-- Evidence:
-  - `blueprint/goni-lab/goni_lab.py`
+- `software/kernel/goni-egress-gate/src/main.rs` contains an HTTP allowlist
+  proxy, but the repository does not demonstrate container-level non-bypass.
+- `software/kernel/goni-router/src/lib.rs` contains a prototype router, but the
+  repository does not demonstrate a regret bound.
+- `software/kernel/goni-context/src/lib.rs` contains Arrow conversion code, but
+  the repository does not demonstrate the complete zero-copy objective.
+- Memory-write and redaction policy helpers are not demonstrated as wired into
+  every runtime path.
+- The frontend is a parked, non-buildable stub.
+- Gateway behavior, a full UI, ITCR, and the complete Delegation OS remain
+  specified only or planned here.
 
-## CI Reality (What Is Enforced)
-- `.github/workflows/ci.yml`
-  - guardrails job blocks pinned specs in `README.md`, `blueprint/docs/goni-story.md`, `blueprint/docs/goni-whitepaper.md`
-  - rust job runs `cargo check`, `cargo test --workspace --all-features`, `cargo clippy -- -D warnings` under `blueprint/software/kernel`
-  - meta job runs `scripts/validate_truth_map.py` and `scripts/generate_agents.py`
-  - bench_smoke job runs `goni-lab` synthetic benchmark
-  - demo_smoke job runs `scripts/run_smoke_local.sh` with `LLM_STUB=1`
-  - txt lint runs `scripts/txt_lint.sh`
+## CI boundary
 
-## Known Risks / Open Decisions
-- Zero-copy hot-path CI gates called for in D-003 are not implemented in CI: `blueprint/software/90-decisions.md` vs `.github/workflows/ci.yml`
-- Embeddings are a deterministic lexical baseline, not a neural model: `software/kernel/goni-embed/src/lib.rs`
-- Gateway/UI not in demo path; reintroduction must be pinned and sourced or explicitly externalized.
-- Prompt materialization and redaction enforcement are specified-only; policy checks exist but no runtime pipeline or gate is wired.
-- MemoryEntries write gating is specified-only at runtime; policy checks exist but are not wired.
-- Container-level non-bypass egress is not enforced in compose; policy gate only.
+`.github/workflows/ci.yml` runs for pushes, pull requests, and manual dispatch.
+It validates the canonical-basis manifest, compiles Python entry points, runs
+the RAG-slice unit tests and a synthetic benchmark smoke test, runs the
+text-confinement lint, checks, tests, and runs Clippy on the Rust workspace,
+then smoke-tests `goni-http` with its local LLM stub. These checks establish
+only their named boundaries.
 
+## Known gaps
+
+- The local smoke test intentionally skips Qdrant health because it tests the
+  orchestrator-plus-stub boundary; the composed smoke path still requires
+  Qdrant.
