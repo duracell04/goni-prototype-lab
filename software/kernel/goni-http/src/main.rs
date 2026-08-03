@@ -1,15 +1,19 @@
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use axum::{extract::State, routing::{get, post}, Json, Router};
+use axum::{
+    extract::State,
+    routing::{get, post},
+    Json, Router,
+};
 use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use tower_http::trace::TraceLayer;
 use uuid::Uuid;
-use sha2::{Digest, Sha256};
 
-use goni_core::GoniKernel;
 use goni_context::{FacilityLocationSelector, NullKvPager};
+use goni_core::GoniKernel;
 use goni_infer::{HttpVllmEngine, NullLlmEngine};
 use goni_receipts::{LlmRouteReceipt, Receipt, ReceiptLog};
 use goni_router::{ConfigRouter, NullRouter, Router};
@@ -55,10 +59,10 @@ struct Choice {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     // Read env for vLLM and model
-    let llm_url = std::env::var("LLM_LOCAL_URL")
-        .unwrap_or_else(|_| "http://localhost:8000/v1".into());
-    let llm_model = std::env::var("LLM_MODEL")
-        .unwrap_or_else(|_| "mistralai/Mistral-7B-Instruct-v0.3".into());
+    let llm_url =
+        std::env::var("LLM_LOCAL_URL").unwrap_or_else(|_| "http://localhost:8000/v1".into());
+    let llm_model =
+        std::env::var("LLM_MODEL").unwrap_or_else(|_| "mistralai/Mistral-7B-Instruct-v0.3".into());
     let llm_deterministic = std::env::var("LLM_DETERMINISTIC")
         .map(|v| v == "1" || v.to_lowercase() == "true")
         .unwrap_or(false);
@@ -67,10 +71,7 @@ async fn main() -> anyhow::Result<()> {
         .and_then(|v| v.parse::<u64>().ok());
 
     if llm_deterministic {
-        println!(
-            "LLM deterministic preset enabled (seed = {:?})",
-            llm_seed
-        );
+        println!("LLM deterministic preset enabled (seed = {:?})", llm_seed);
     }
 
     // Data plane:
@@ -81,7 +82,8 @@ async fn main() -> anyhow::Result<()> {
         Ok(url) if !url.is_empty() => Arc::new(QdrantDataPlane::new(url)),
         _ => Arc::new(NullDataPlane),
     };
-    let data_plane: Arc<dyn goni_store::DataPlane> = Arc::new(MultiDataPlane::new(spine_plane, rag_plane));
+    let data_plane: Arc<dyn goni_store::DataPlane> =
+        Arc::new(MultiDataPlane::new(spine_plane, rag_plane));
     let context_selector = Arc::new(FacilityLocationSelector::new(0.3));
     let kv_pager = Arc::new(NullKvPager);
     let scheduler = Arc::new(InMemoryScheduler::new());
@@ -105,8 +107,8 @@ async fn main() -> anyhow::Result<()> {
         ))
     };
 
-    let receipt_path = std::env::var("GONI_RECEIPTS_FILE")
-        .unwrap_or_else(|_| "./receipts.jsonl".into());
+    let receipt_path =
+        std::env::var("GONI_RECEIPTS_FILE").unwrap_or_else(|_| "./receipts.jsonl".into());
     let receipts = Arc::new(ReceiptLog::open(receipt_path)?);
 
     let kernel = Arc::new(GoniKernel::new(
@@ -192,7 +194,10 @@ async fn chat_completions(
     };
 
     let input_hash = format!("{:x}", Sha256::digest(prompt.as_bytes()));
-    let output_hash = format!("{:x}", Sha256::digest(resp.choices[0].message.content.as_bytes()));
+    let output_hash = format!(
+        "{:x}",
+        Sha256::digest(resp.choices[0].message.content.as_bytes())
+    );
     let receipt = Receipt {
         receipt_id: Uuid::new_v4(),
         timestamp: chrono::Utc::now().to_rfc3339(),

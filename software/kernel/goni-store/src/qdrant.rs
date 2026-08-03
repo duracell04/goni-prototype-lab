@@ -1,10 +1,13 @@
 use std::sync::Arc;
 
-use arrow_array::{builder::StringBuilder, types::UInt32Type, Array, ArrayRef, FixedSizeListArray, Float32Array, StringArray, UInt32Array};
+use arrow_array::{
+    builder::StringBuilder, types::UInt32Type, Array, ArrayRef, FixedSizeListArray, Float32Array,
+    StringArray, UInt32Array,
+};
 use arrow_schema::{DataType, Field, Schema};
 use async_trait::async_trait;
-use serde::{Deserialize, Serialize};
 use goni_embed::embed;
+use serde::{Deserialize, Serialize};
 
 use crate::{ArrowBatch, ArrowBatchHandle, DataError, DataPlane};
 
@@ -70,10 +73,7 @@ struct UpsertRequest<'a> {
 
 #[async_trait]
 impl DataPlane for QdrantDataPlane {
-    async fn query(
-        &self,
-        _sql: &str,
-    ) -> Result<Vec<ArrowBatchHandle>, DataError> {
+    async fn query(&self, _sql: &str) -> Result<Vec<ArrowBatchHandle>, DataError> {
         Err(DataError {
             message: "QdrantDataPlane does not support SQL queries".into(),
         })
@@ -91,23 +91,24 @@ impl DataPlane for QdrantDataPlane {
             let text_idx = batch.schema().index_of("text").map_err(|_| DataError {
                 message: "missing text column".into(),
             })?;
-            let tokens_idx = batch
-                .schema()
-                .index_of("tokens")
-                .map_err(|_| DataError {
-                    message: "missing tokens column".into(),
-                })?;
+            let tokens_idx = batch.schema().index_of("tokens").map_err(|_| DataError {
+                message: "missing tokens column".into(),
+            })?;
 
-            let ids = batch.column(id_idx).as_any().downcast_ref::<StringArray>().ok_or(
-                DataError {
+            let ids = batch
+                .column(id_idx)
+                .as_any()
+                .downcast_ref::<StringArray>()
+                .ok_or(DataError {
                     message: "id column not utf8".into(),
-                },
-            )?;
-            let texts = batch.column(text_idx).as_any().downcast_ref::<StringArray>().ok_or(
-                DataError {
+                })?;
+            let texts = batch
+                .column(text_idx)
+                .as_any()
+                .downcast_ref::<StringArray>()
+                .ok_or(DataError {
                     message: "text column not utf8".into(),
-                },
-            )?;
+                })?;
             let tokens_arr = batch
                 .column(tokens_idx)
                 .as_any()

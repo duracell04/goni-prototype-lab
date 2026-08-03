@@ -23,7 +23,9 @@ impl MultiDataPlane {
     fn looks_like_rag_ingest(batch: &arrow::record_batch::RecordBatch) -> bool {
         let s = batch.schema();
         // Heuristic: QdrantDataPlane expects plain utf8 columns "id" and "text", and u32 "tokens".
-        s.index_of("id").is_ok() && s.index_of("text").is_ok() && s.index_of("tokens").is_ok()
+        s.index_of("id").is_ok()
+            && s.index_of("text").is_ok()
+            && s.index_of("tokens").is_ok()
             && s.index_of("row_id").is_err()
     }
 }
@@ -39,7 +41,10 @@ impl DataPlane for MultiDataPlane {
         table: &str,
         batches: Vec<ArrowBatchHandle>,
     ) -> Result<(), DataError> {
-        if batches.iter().any(|b| Self::looks_like_rag_ingest(b.as_ref())) {
+        if batches
+            .iter()
+            .any(|b| Self::looks_like_rag_ingest(b.as_ref()))
+        {
             // Route to RAG backend (Qdrant ingestion) when batch shape matches.
             self.rag.append_batches(table, batches).await
         } else {
@@ -54,6 +59,8 @@ impl DataPlane for MultiDataPlane {
         query_embedding: &[f32],
         top_k: usize,
     ) -> Result<ArrowBatchHandle, DataError> {
-        self.rag.rag_candidates(collection, query_embedding, top_k).await
+        self.rag
+            .rag_candidates(collection, query_embedding, top_k)
+            .await
     }
 }

@@ -1,9 +1,7 @@
-use async_trait::async_trait;
-use arrow::array::{
-    Array, Float32Array, FixedSizeListArray, Int32Array, StringArray, UInt32Array,
-};
+use arrow::array::{Array, FixedSizeListArray, Float32Array, Int32Array, StringArray, UInt32Array};
 use arrow::datatypes::DataType;
 use arrow::record_batch::RecordBatch;
+use async_trait::async_trait;
 use goni_types::{ContextSelection, KvPageId};
 use thiserror::Error;
 
@@ -32,22 +30,13 @@ pub trait ContextSelector: Send + Sync {
 #[async_trait]
 pub trait KvPager: Send + Sync {
     /// Ensure these pages are resident on device (GPU/NPU).
-    async fn ensure_resident(
-        &self,
-        pages: &[KvPageId],
-    ) -> Result<(), KvError>;
+    async fn ensure_resident(&self, pages: &[KvPageId]) -> Result<(), KvError>;
 
     /// Notify about newly created KV pages and receive eviction candidates.
-    async fn on_new_pages(
-        &self,
-        new_pages: &[KvPageId],
-    ) -> Result<Vec<KvPageId>, KvError>;
+    async fn on_new_pages(&self, new_pages: &[KvPageId]) -> Result<Vec<KvPageId>, KvError>;
 
     /// Report which pages were actually touched in last forward pass.
-    async fn report_access(
-        &self,
-        accessed: &[KvPageId],
-    ) -> Result<(), KvError>;
+    async fn report_access(&self, accessed: &[KvPageId]) -> Result<(), KvError>;
 }
 
 #[derive(Debug)]
@@ -107,10 +96,7 @@ impl ContextSelector for FacilityLocationSelector {
         let mut sim: Vec<f32> = vec![0.0; n * n];
         for i in 0..n {
             for j in 0..n {
-                let s = Self::cosine_similarity(
-                    candidates[i].embedding,
-                    candidates[j].embedding,
-                );
+                let s = Self::cosine_similarity(candidates[i].embedding, candidates[j].embedding);
                 sim[i * n + j] = s.max(0.0); // clamp to non-negative
             }
         }
@@ -156,8 +142,7 @@ impl ContextSelector for FacilityLocationSelector {
                     // Select j
                     selected_mask[j] = true;
                     selected_indices.push(j as u32);
-                    remaining_tokens =
-                        remaining_tokens.saturating_sub(candidates[j].tokens);
+                    remaining_tokens = remaining_tokens.saturating_sub(candidates[j].tokens);
 
                     // Update coverage array
                     for i in 0..n {
@@ -243,21 +228,22 @@ pub fn record_batch_to_candidate_chunks<'a>(
     let id_idx = schema
         .index_of(id_col)
         .map_err(|_| CandidateBuildError::MissingColumn(id_col.to_string()))?;
-    let tokens_idx = schema.index_of(tokens_col).map_err(|_| {
-        CandidateBuildError::MissingColumn(tokens_col.to_string())
-    })?;
-    let emb_idx = schema.index_of(embedding_col).map_err(|_| {
-        CandidateBuildError::MissingColumn(embedding_col.to_string())
-    })?;
+    let tokens_idx = schema
+        .index_of(tokens_col)
+        .map_err(|_| CandidateBuildError::MissingColumn(tokens_col.to_string()))?;
+    let emb_idx = schema
+        .index_of(embedding_col)
+        .map_err(|_| CandidateBuildError::MissingColumn(embedding_col.to_string()))?;
     let text_idx = schema.index_of("text").ok();
 
     // 2) Downcast columns
 
     // id: Utf8
     let id_array = batch.column(id_idx);
-    let id_array = id_array.as_any().downcast_ref::<StringArray>().ok_or_else(
-        || CandidateBuildError::InvalidColumnType(id_col.to_string()),
-    )?;
+    let id_array = id_array
+        .as_any()
+        .downcast_ref::<StringArray>()
+        .ok_or_else(|| CandidateBuildError::InvalidColumnType(id_col.to_string()))?;
 
     // optional text
     let text_array: Option<&StringArray> = match text_idx {
@@ -271,15 +257,17 @@ pub fn record_batch_to_candidate_chunks<'a>(
 
     // embedding: FixedSizeList<Float32>
     let emb_array = batch.column(emb_idx);
-    let emb_list = emb_array.as_any().downcast_ref::<FixedSizeListArray>().ok_or_else(
-        || CandidateBuildError::InvalidColumnType(embedding_col.to_string()),
-    )?;
+    let emb_list = emb_array
+        .as_any()
+        .downcast_ref::<FixedSizeListArray>()
+        .ok_or_else(|| CandidateBuildError::InvalidColumnType(embedding_col.to_string()))?;
 
     let value_len = emb_list.value_length() as usize;
     let emb_values = emb_list.values();
-    let emb_values = emb_values.as_any().downcast_ref::<Float32Array>().ok_or_else(
-        || CandidateBuildError::InvalidColumnType(embedding_col.to_string()),
-    )?;
+    let emb_values = emb_values
+        .as_any()
+        .downcast_ref::<Float32Array>()
+        .ok_or_else(|| CandidateBuildError::InvalidColumnType(embedding_col.to_string()))?;
 
     if value_len != query_embedding.len() {
         return Err(CandidateBuildError::EmbeddingDimMismatch {
@@ -303,14 +291,23 @@ pub fn record_batch_to_candidate_chunks<'a>(
         }
         let id_str: &str = id_array.value(row);
 
-        let text_val = text_array.and_then(|arr| if arr.is_null(row) { None } else { Some(arr.value(row)) });
+        let text_val = text_array.and_then(|arr| {
+            if arr.is_null(row) {
+                None
+            } else {
+                Some(arr.value(row))
+            }
+        });
 
         // 4) tokens as usize
         let tokens: usize = match tokens_type {
             DataType::Int32 => {
-                let ints = tokens_array.as_any().downcast_ref::<Int32Array>().ok_or_else(
-                    || CandidateBuildError::InvalidColumnType(tokens_col.to_string()),
-                )?;
+                let ints = tokens_array
+                    .as_any()
+                    .downcast_ref::<Int32Array>()
+                    .ok_or_else(|| {
+                        CandidateBuildError::InvalidColumnType(tokens_col.to_string())
+                    })?;
                 let v = ints.value(row);
                 if v <= 0 {
                     continue;
@@ -318,9 +315,12 @@ pub fn record_batch_to_candidate_chunks<'a>(
                 v as usize
             }
             DataType::UInt32 => {
-                let ints = tokens_array.as_any().downcast_ref::<UInt32Array>().ok_or_else(
-                    || CandidateBuildError::InvalidColumnType(tokens_col.to_string()),
-                )?;
+                let ints = tokens_array
+                    .as_any()
+                    .downcast_ref::<UInt32Array>()
+                    .ok_or_else(|| {
+                        CandidateBuildError::InvalidColumnType(tokens_col.to_string())
+                    })?;
                 ints.value(row) as usize
             }
             _ => {
@@ -359,24 +359,15 @@ pub struct NullKvPager;
 
 #[async_trait]
 impl KvPager for NullKvPager {
-    async fn ensure_resident(
-        &self,
-        _pages: &[KvPageId],
-    ) -> Result<(), KvError> {
+    async fn ensure_resident(&self, _pages: &[KvPageId]) -> Result<(), KvError> {
         Ok(())
     }
 
-    async fn on_new_pages(
-        &self,
-        _new_pages: &[KvPageId],
-    ) -> Result<Vec<KvPageId>, KvError> {
+    async fn on_new_pages(&self, _new_pages: &[KvPageId]) -> Result<Vec<KvPageId>, KvError> {
         Ok(Vec::new())
     }
 
-    async fn report_access(
-        &self,
-        _accessed: &[KvPageId],
-    ) -> Result<(), KvError> {
+    async fn report_access(&self, _accessed: &[KvPageId]) -> Result<(), KvError> {
         Ok(())
     }
 }

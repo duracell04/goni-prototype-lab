@@ -60,8 +60,15 @@ impl GoniKernel {
     ///
     /// Important: this method does **not** call the LLM directly.
     /// The LLM is invoked by the scheduler executor loop (see `run_scheduler_loop`).
-    pub async fn handle_user_query(&self, prompt: &str, class: TaskClass) -> anyhow::Result<TokenStream> {
-        Ok(self.handle_user_query_with_trace(prompt, class).await?.stream)
+    pub async fn handle_user_query(
+        &self,
+        prompt: &str,
+        class: TaskClass,
+    ) -> anyhow::Result<TokenStream> {
+        Ok(self
+            .handle_user_query_with_trace(prompt, class)
+            .await?
+            .stream)
     }
 
     pub async fn handle_user_query_with_trace(
@@ -122,12 +129,16 @@ impl GoniKernel {
 
     /// Run one scheduled batch (if any) and deliver its result to the waiting receiver.
     pub async fn run_scheduler_once(&self) {
-        let Some(batch) = self.scheduler.next().await else { return; };
+        let Some(batch) = self.scheduler.next().await else {
+            return;
+        };
         let pending = {
             let mut p = self.pending.lock().await;
             p.remove(&batch.meta.id)
         };
-        let Some(req) = pending else { return; };
+        let Some(req) = pending else {
+            return;
+        };
 
         let result = self.solve_prompt_with_trace(&req.prompt, req.class).await;
         let _ = req.tx.send(result);
@@ -146,7 +157,11 @@ impl GoniKernel {
         Ok(self.solve_prompt_with_trace(prompt, _class).await?.stream)
     }
 
-    async fn solve_prompt_with_trace(&self, prompt: &str, _class: TaskClass) -> anyhow::Result<QueryTrace> {
+    async fn solve_prompt_with_trace(
+        &self,
+        prompt: &str,
+        _class: TaskClass,
+    ) -> anyhow::Result<QueryTrace> {
         // Deterministic lexical embedding baseline.
         let emb_dim: usize = std::env::var("EMBED_DIM")
             .ok()

@@ -1,4 +1,7 @@
-use axum::{routing::{get, post}, Json, Router};
+use axum::{
+    routing::{get, post},
+    Json, Router,
+};
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -41,7 +44,8 @@ async fn main() -> anyhow::Result<()> {
         PolicyEngine::allowlist(hosts)
     };
 
-    let receipt_path = std::env::var("GONI_RECEIPTS_FILE").unwrap_or_else(|_| "./receipts.jsonl".into());
+    let receipt_path =
+        std::env::var("GONI_RECEIPTS_FILE").unwrap_or_else(|_| "./receipts.jsonl".into());
     let receipts = ReceiptLog::open(receipt_path)?;
 
     let state = AppState {
@@ -56,7 +60,9 @@ async fn main() -> anyhow::Result<()> {
 
     let addr: SocketAddr = "0.0.0.0:8081".parse()?;
     println!("egress gate listening on {addr}");
-    axum::Server::bind(&addr).serve(app.into_make_service()).await?;
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service())
+        .await?;
     Ok(())
 }
 
@@ -79,7 +85,10 @@ async fn fetch(
             PolicyDecision::Allow => "allow".into(),
             PolicyDecision::Deny(r) => format!("deny:{r}"),
         },
-        capability_id: Some(Uuid::new_v5(&Uuid::NAMESPACE_OID, req.capability_token.as_bytes())),
+        capability_id: Some(Uuid::new_v5(
+            &Uuid::NAMESPACE_OID,
+            req.capability_token.as_bytes(),
+        )),
         input_hash: "".into(),
         output_hash: "".into(),
         llm_route: None,

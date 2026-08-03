@@ -30,17 +30,39 @@ macro_rules! __ty_to_arrow {
     ( FixedSizeBinary ( $n:literal ) ) => {
         ::arrow::datatypes::DataType::FixedSizeBinary($n)
     };
-    ( Utf8 ) => { ::arrow::datatypes::DataType::Utf8 };
-    ( LargeUtf8 ) => { ::arrow::datatypes::DataType::LargeUtf8 };
-    ( UInt32 ) => { ::arrow::datatypes::DataType::UInt32 };
-    ( UInt16 ) => { ::arrow::datatypes::DataType::UInt16 };
-    ( UInt8 )  => { ::arrow::datatypes::DataType::UInt8 };
-    ( Int64 )  => { ::arrow::datatypes::DataType::Int64 };
-    ( Int32 )  => { ::arrow::datatypes::DataType::Int32 };
-    ( Int16 )  => { ::arrow::datatypes::DataType::Int16 };
-    ( Boolean ) => { ::arrow::datatypes::DataType::Boolean };
-    ( Float32 ) => { ::arrow::datatypes::DataType::Float32 };
-    ( Float64 ) => { ::arrow::datatypes::DataType::Float64 };
+    ( Utf8 ) => {
+        ::arrow::datatypes::DataType::Utf8
+    };
+    ( LargeUtf8 ) => {
+        ::arrow::datatypes::DataType::LargeUtf8
+    };
+    ( UInt32 ) => {
+        ::arrow::datatypes::DataType::UInt32
+    };
+    ( UInt16 ) => {
+        ::arrow::datatypes::DataType::UInt16
+    };
+    ( UInt8 ) => {
+        ::arrow::datatypes::DataType::UInt8
+    };
+    ( Int64 ) => {
+        ::arrow::datatypes::DataType::Int64
+    };
+    ( Int32 ) => {
+        ::arrow::datatypes::DataType::Int32
+    };
+    ( Int16 ) => {
+        ::arrow::datatypes::DataType::Int16
+    };
+    ( Boolean ) => {
+        ::arrow::datatypes::DataType::Boolean
+    };
+    ( Float32 ) => {
+        ::arrow::datatypes::DataType::Float32
+    };
+    ( Float64 ) => {
+        ::arrow::datatypes::DataType::Float64
+    };
     ( DictU8Utf8 ) => {
         ::arrow::datatypes::DataType::Dictionary(
             Box::new(::arrow::datatypes::DataType::UInt8),
@@ -52,8 +74,16 @@ macro_rules! __ty_to_arrow {
             Box::new(::arrow::datatypes::Field::new(
                 "entry",
                 ::arrow::datatypes::DataType::Struct(vec![
-                    ::arrow::datatypes::Field::new("key", ::arrow::datatypes::DataType::Utf8, false),
-                    ::arrow::datatypes::Field::new("value", ::arrow::datatypes::DataType::Utf8, true),
+                    ::arrow::datatypes::Field::new(
+                        "key",
+                        ::arrow::datatypes::DataType::Utf8,
+                        false,
+                    ),
+                    ::arrow::datatypes::Field::new(
+                        "value",
+                        ::arrow::datatypes::DataType::Utf8,
+                        true,
+                    ),
                 ]),
                 false,
             )),
@@ -61,13 +91,19 @@ macro_rules! __ty_to_arrow {
         )
     };
     ( ListUtf8 ) => {
-        ::arrow::datatypes::DataType::List(Box::new(
-            ::arrow::datatypes::Field::new("item", ::arrow::datatypes::DataType::Utf8, true),
-        ))
+        ::arrow::datatypes::DataType::List(Box::new(::arrow::datatypes::Field::new(
+            "item",
+            ::arrow::datatypes::DataType::Utf8,
+            true,
+        )))
     };
     ( FixedSizeListF32 ( $n:literal ) ) => {
         ::arrow::datatypes::DataType::FixedSizeList(
-            Box::new(::arrow::datatypes::Field::new("item", ::arrow::datatypes::DataType::Float32, true)),
+            Box::new(::arrow::datatypes::Field::new(
+                "item",
+                ::arrow::datatypes::DataType::Float32,
+                true,
+            )),
             $n as i32,
         )
     };

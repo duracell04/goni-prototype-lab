@@ -87,7 +87,6 @@ impl AgentManifest {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::AgentManifest;
@@ -132,7 +131,8 @@ tools:
 
     #[test]
     fn parses_legacy_manifest_without_new_fields() {
-        let manifest = AgentManifest::parse_yaml(LEGACY_MANIFEST).expect("legacy manifest should parse");
+        let manifest =
+            AgentManifest::parse_yaml(LEGACY_MANIFEST).expect("legacy manifest should parse");
         assert!(manifest.ui_surfaces.is_empty());
         assert!(manifest.identity_requirements.is_empty());
         assert!(!manifest.remote_access);
@@ -141,7 +141,10 @@ tools:
     #[test]
     fn parses_manifest_with_new_fields() {
         let manifest = AgentManifest::parse_yaml(NEW_MANIFEST).expect("new manifest should parse");
-        assert_eq!(manifest.ui_surfaces, vec!["dashboard_tile", "inbox_sidebar"]);
+        assert_eq!(
+            manifest.ui_surfaces,
+            vec!["dashboard_tile", "inbox_sidebar"]
+        );
         assert_eq!(manifest.identity_requirements, vec!["user_session"]);
         assert!(manifest.remote_access);
     }

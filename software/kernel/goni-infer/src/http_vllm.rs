@@ -5,7 +5,8 @@ use futures_util::{stream, StreamExt};
 use goni_types::LlmRequest;
 use serde::{Deserialize, Serialize};
 
-type DynStream = Pin<Box<dyn futures_core::Stream<Item = Result<crate::LlmToken, crate::LlmError>> + Send>>;
+type DynStream =
+    Pin<Box<dyn futures_core::Stream<Item = Result<crate::LlmToken, crate::LlmError>> + Send>>;
 
 use crate::{LlmEngine, LlmError, LlmToken, TokenStream};
 
@@ -66,10 +67,7 @@ impl HttpVllmEngine {
 
 #[async_trait]
 impl LlmEngine for HttpVllmEngine {
-    async fn generate(
-        &self,
-        req: LlmRequest,
-    ) -> Result<TokenStream, LlmError> {
+    async fn generate(&self, req: LlmRequest) -> Result<TokenStream, LlmError> {
         let url = format!("{}/chat/completions", self.base_url);
 
         let body = OpenAIChatRequest {

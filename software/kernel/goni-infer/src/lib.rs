@@ -13,8 +13,7 @@ pub struct LlmToken {
     pub text: String,
 }
 
-pub type TokenStream =
-    Pin<Box<dyn Stream<Item = Result<LlmToken, LlmError>> + Send>>;
+pub type TokenStream = Pin<Box<dyn Stream<Item = Result<LlmToken, LlmError>> + Send>>;
 
 #[derive(Debug)]
 pub struct LlmError {
@@ -23,10 +22,7 @@ pub struct LlmError {
 
 #[async_trait]
 pub trait LlmEngine: Send + Sync {
-    async fn generate(
-        &self,
-        req: LlmRequest,
-    ) -> Result<TokenStream, LlmError>;
+    async fn generate(&self, req: LlmRequest) -> Result<TokenStream, LlmError>;
 }
 
 /// Dummy implementation that yields no tokens.
@@ -34,10 +30,7 @@ pub struct NullLlmEngine;
 
 #[async_trait]
 impl LlmEngine for NullLlmEngine {
-    async fn generate(
-        &self,
-        _req: LlmRequest,
-    ) -> Result<TokenStream, LlmError> {
+    async fn generate(&self, _req: LlmRequest) -> Result<TokenStream, LlmError> {
         use futures_util::stream;
 
         Ok(Box::pin(stream::empty()))
