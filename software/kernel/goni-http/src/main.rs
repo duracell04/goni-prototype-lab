@@ -29,12 +29,14 @@ struct AppState {
 
 #[derive(Debug, Deserialize)]
 struct ChatCompletionRequest {
-    model: String,
+    #[serde(rename = "model")]
+    _model: String,
     messages: Vec<Message>,
     #[serde(default)]
     max_tokens: Option<u32>,
     #[serde(default)]
-    stream: Option<bool>,
+    #[serde(rename = "stream")]
+    _stream: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
