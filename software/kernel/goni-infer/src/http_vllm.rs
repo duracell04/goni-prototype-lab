@@ -144,10 +144,9 @@ impl LlmEngine for HttpVllmEngine {
             }
         });
 
-        // Flatten the stream of streams
-        let flat_stream = s
-            .map(|maybe_stream| maybe_stream.unwrap_or_else(|| stream::empty()))
-            .flatten();
+        // `filter_map` has already removed empty chunks, so each remaining item
+        // is a token stream rather than an optional token stream.
+        let flat_stream = s.flatten();
 
         Ok(Box::pin(flat_stream) as TokenStream)
     }
