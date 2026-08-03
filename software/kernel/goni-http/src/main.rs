@@ -153,7 +153,7 @@ async fn chat_completions(
     let mut prompt = String::new();
     for m in req.messages.iter().filter(|m| m.role == "user") {
         if !prompt.is_empty() {
-            prompt.push_str("\n");
+            prompt.push('\n');
         }
         prompt.push_str(&m.content);
     }
