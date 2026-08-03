@@ -152,9 +152,8 @@ mod tests {
 
     #[test]
     fn receipt_chain_verifies() {
-        let path = "target/test_receipts.jsonl";
-        let _ = fs::remove_file(path);
-        let log = ReceiptLog::open(path).unwrap();
+        let path = std::env::temp_dir().join(format!("goni-receipts-{}.jsonl", Uuid::new_v4()));
+        let log = ReceiptLog::open(&path).unwrap();
         let r1 = Receipt {
             receipt_id: Uuid::new_v4(),
             timestamp: "t1".into(),
@@ -168,7 +167,8 @@ mod tests {
             chain_hash: "".into(),
         };
         log.append(r1).unwrap();
-        verify_log(path).unwrap();
+        verify_log(&path).unwrap();
+        fs::remove_file(path).unwrap();
     }
 
     #[test]
