@@ -118,6 +118,17 @@ macro_rules! __ty_to_arrow {
     };
 }
 
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __is_large_utf8 {
+    ( LargeUtf8 ) => {
+        true
+    };
+    ( $other:ident ) => {
+        false
+    };
+}
+
 /// TXT axiom compile-time guard: forbid LargeUtf8 in Control/Execution tables when declared in the DSL.
 #[macro_export]
 macro_rules! __guard_txt_large_utf8 {
@@ -128,10 +139,10 @@ macro_rules! __guard_txt_large_utf8 {
     ) => {
         $( #[allow(dead_code)] const _: () = {
             use $crate::plane::Plane;
-            if matches!($plane, Plane::Control | Plane::Execution) {
-                if stringify!($fty) == "LargeUtf8" {
-                    compile_error!("TXT axiom violated: LargeUtf8 not allowed in Control/Execution planes");
-                }
+            if matches!($plane, Plane::Control | Plane::Execution)
+                && $crate::__is_large_utf8!($fty)
+            {
+                panic!("TXT axiom violated: LargeUtf8 not allowed in Control/Execution planes");
             }
         }; )*
     };
