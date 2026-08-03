@@ -71,27 +71,30 @@ macro_rules! __ty_to_arrow {
     };
     ( MapUtf8Utf8 ) => {
         ::arrow::datatypes::DataType::Map(
-            Box::new(::arrow::datatypes::Field::new(
+            ::std::sync::Arc::new(::arrow::datatypes::Field::new(
                 "entry",
-                ::arrow::datatypes::DataType::Struct(vec![
-                    ::arrow::datatypes::Field::new(
-                        "key",
-                        ::arrow::datatypes::DataType::Utf8,
-                        false,
-                    ),
-                    ::arrow::datatypes::Field::new(
-                        "value",
-                        ::arrow::datatypes::DataType::Utf8,
-                        true,
-                    ),
-                ]),
+                ::arrow::datatypes::DataType::Struct(
+                    vec![
+                        ::arrow::datatypes::Field::new(
+                            "key",
+                            ::arrow::datatypes::DataType::Utf8,
+                            false,
+                        ),
+                        ::arrow::datatypes::Field::new(
+                            "value",
+                            ::arrow::datatypes::DataType::Utf8,
+                            true,
+                        ),
+                    ]
+                    .into(),
+                ),
                 false,
             )),
             false,
         )
     };
     ( ListUtf8 ) => {
-        ::arrow::datatypes::DataType::List(Box::new(::arrow::datatypes::Field::new(
+        ::arrow::datatypes::DataType::List(::std::sync::Arc::new(::arrow::datatypes::Field::new(
             "item",
             ::arrow::datatypes::DataType::Utf8,
             true,
@@ -99,7 +102,7 @@ macro_rules! __ty_to_arrow {
     };
     ( FixedSizeListF32 ( $n:literal ) ) => {
         ::arrow::datatypes::DataType::FixedSizeList(
-            Box::new(::arrow::datatypes::Field::new(
+            ::std::sync::Arc::new(::arrow::datatypes::Field::new(
                 "item",
                 ::arrow::datatypes::DataType::Float32,
                 true,
