@@ -23,6 +23,12 @@ pub struct InMemoryScheduler {
     inner: Mutex<Inner>,
 }
 
+impl Default for InMemoryScheduler {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 struct Inner {
     queues: [VecDeque<Arc<GoniBatch>>; 3],
     weights: [f64; 3], // w_int, w_bg, w_maint
