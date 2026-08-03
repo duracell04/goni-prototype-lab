@@ -20,6 +20,14 @@ pub struct LlmError {
     pub message: String,
 }
 
+impl std::fmt::Display for LlmError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(&self.message)
+    }
+}
+
+impl std::error::Error for LlmError {}
+
 #[async_trait]
 pub trait LlmEngine: Send + Sync {
     async fn generate(&self, req: LlmRequest) -> Result<TokenStream, LlmError>;

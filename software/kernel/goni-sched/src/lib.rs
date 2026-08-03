@@ -1,10 +1,8 @@
 use std::collections::VecDeque;
 use std::sync::Arc;
 
-use arrow::datatypes::Schema;
-use arrow::record_batch::RecordBatch;
 use async_trait::async_trait;
-use goni_types::{BatchMeta, GoniBatch, TaskClass};
+use goni_types::{GoniBatch, TaskClass};
 use tokio::sync::Mutex;
 
 /// Core scheduling interface.
@@ -142,6 +140,9 @@ impl Scheduler for QoSScheduler {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use arrow::datatypes::Schema;
+    use arrow::record_batch::RecordBatch;
+    use goni_types::BatchMeta;
     use std::sync::Arc;
 
     fn dummy_batch(class: TaskClass) -> GoniBatch {

@@ -1,12 +1,7 @@
-use std::pin::Pin;
-
 use async_trait::async_trait;
 use futures_util::{stream, StreamExt};
 use goni_types::LlmRequest;
 use serde::{Deserialize, Serialize};
-
-type DynStream =
-    Pin<Box<dyn futures_core::Stream<Item = Result<crate::LlmToken, crate::LlmError>> + Send>>;
 
 use crate::{LlmEngine, LlmError, LlmToken, TokenStream};
 
@@ -35,7 +30,8 @@ struct ChatCompletionChunk {
 struct ChatChoiceDelta {
     delta: Delta,
     #[serde(default)]
-    index: usize,
+    #[serde(rename = "index")]
+    _index: usize,
 }
 
 #[derive(Deserialize)]

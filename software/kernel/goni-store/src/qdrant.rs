@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use arrow_array::{
-    builder::StringBuilder, types::UInt32Type, Array, ArrayRef, FixedSizeListArray, Float32Array,
-    StringArray, UInt32Array,
+    builder::StringBuilder, Array, ArrayRef, FixedSizeListArray, Float32Array, StringArray,
+    UInt32Array,
 };
 use arrow_schema::{DataType, Field, Schema};
 use async_trait::async_trait;

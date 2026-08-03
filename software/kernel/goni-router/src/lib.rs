@@ -108,13 +108,15 @@ struct ModelConfig {
 
 #[derive(Clone, Debug, Deserialize)]
 struct RoutingConfig {
-    local_first: Option<LocalFirstConfig>,
+    #[serde(rename = "local_first")]
+    _local_first: Option<LocalFirstConfig>,
     frugal_sovereign: Option<FrugalSovereignConfig>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
 struct LocalFirstConfig {
-    target_local_token_ratio: Option<f32>,
+    #[serde(rename = "target_local_token_ratio")]
+    _target_local_token_ratio: Option<f32>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
