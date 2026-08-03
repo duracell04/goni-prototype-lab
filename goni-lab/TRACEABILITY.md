@@ -1,8 +1,7 @@
 # Canonical node to experiment traceability
 
-Resolve every canonical node against the full `goni` revision in
-`canonical-basis.json`. Until `pin_state` becomes `pinned`, the IDs below refer
-to the recorded pre-migration baseline and are awaiting final-path resolution.
+Resolve every canonical node against the full, pinned `goni` revision in
+`canonical-basis.json`. The IDs below refer to that immutable canonical basis.
 
 | Canonical node | Lab interpretation | Implementation | Test boundary | Lab status / limitation |
 |---|---|---|---|---|

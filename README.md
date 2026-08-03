@@ -7,7 +7,7 @@ architecture or governance.
 The canonical knowledge repository is
 [`duracell04/goni`](https://github.com/duracell04/goni). The machine-readable
 [`canonical-basis.json`](canonical-basis.json) records the pre-migration
-baseline, the pending final migration pin, and the canonical node IDs relevant
+baseline, the final migration pin, and the canonical node IDs relevant
 to the experiments in this repository.
 
 ## Authority boundary
@@ -29,9 +29,8 @@ bash scripts/txt_lint.sh
 cargo test --manifest-path software/kernel/Cargo.toml --workspace --all-features
 ```
 
-The final coordinated integration commit must replace the `null`
-`final_revision` in `canonical-basis.json` with the full final `goni` migration
-SHA, change `pin_state` to `pinned`, and run:
+The final canonical revision is pinned in `canonical-basis.json`. Verify that
+the manifest remains fully pinned with:
 
 ```bash
 python scripts/validate_canonical_basis.py --require-final

@@ -3,8 +3,8 @@
 ## Authority
 
 `duracell04/goni` is the canonical source for GONI propositions and status.
-This repository is an experimental lab. Its canonical baseline, pending final
-pin, and relevant node IDs are recorded in `canonical-basis.json`.
+This repository is an experimental lab. Its canonical baseline, final pin, and
+relevant node IDs are recorded in `canonical-basis.json`.
 
 Experiments can produce repository-and-commit-pinned observations for review in
 `goni`. They cannot promote a node's status or redefine the canon.
@@ -59,5 +59,3 @@ only their named boundaries.
 - The local smoke test intentionally skips Qdrant health because it tests the
   orchestrator-plus-stub boundary; the composed smoke path still requires
   Qdrant.
-- The final canonical migration SHA is pending and must replace the manifest's
-  `null` placeholder in the final integration commit.
