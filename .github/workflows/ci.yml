@@ -1,98 +1,62 @@
 name: CI
 
 on:
+  push:
+  pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  guardrails:
+  metadata:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          fetch-depth: 0
-      - name: Block pinned specs in README/story
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          BASE_BRANCH="${GITHUB_BASE_REF:-main}"
-          git fetch origin "$BASE_BRANCH" --depth=1 || true
-
-          if git show-ref --verify --quiet "refs/remotes/origin/${BASE_BRANCH}"; then
-            BASE_REF="origin/${BASE_BRANCH}"
-          else
-            BASE_REF="$(git rev-parse HEAD^ || echo HEAD)"
-          fi
-
-          PATTERN='\b(?:Llama|MiniLM|Ryzen|Intel|NVIDIA|Blackwell|Strix|Halo|Xeon|GN100|GPU|CPU|CUDA|cuDNN)\b|\b\d+(?:\.\d+)?\s*(?:W|dB|dBA|GHz|GB|TB|TOPS|cm|mm|L)\b|\b\d+\s*-\s*\d+\s*B\b'
-
-          ADDED=$(git diff --unified=0 "${BASE_REF}"...HEAD -- README.md blueprint/docs/goni-story.md blueprint/docs/goni-whitepaper.md \
-            | grep '^+' \
-            | grep -Ev '^\+\+\+|^@@' \
-            | grep -E "$PATTERN" || true)
-
-          if [ -n "$ADDED" ]; then
-            echo "Blocked: new pinned specs detected in README/story/whitepaper. Keep concrete numbers in decisions or prototype tracks."
-            echo "$ADDED"
-            exit 1
-          fi
+          python-version: "3.12"
+      - name: Validate canonical basis
+        run: python scripts/validate_canonical_basis.py
+      - name: Compile Python entry points
+        run: python -m compileall -q scripts goni-lab prototype/01-rag-slice
+      - name: Install RAG-slice test dependencies
+        run: python -m pip install --requirement prototype/01-rag-slice/requirements-test.txt
+      - name: RAG-slice unit tests
+        run: python -m pytest -q prototype/01-rag-slice/test_ingest.py
+      - name: Benchmark smoke test
+        run: python goni-lab/goni_lab.py bench --scenario goni-lab/scenarios/mixed.json
+      - name: Text-confinement lint
+        run: bash scripts/txt_lint.sh
 
   rust:
-    needs: guardrails
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: blueprint/software/kernel
+        working-directory: software/kernel
     steps:
       - uses: actions/checkout@v4
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          profile: minimal
-          components: clippy
-          override: true
+          components: clippy,rustfmt
+      - name: Cargo format
+        run: cargo fmt --all -- --check
       - name: Cargo check
-        run: cargo check --workspace
+        run: cargo check --workspace --all-features
       - name: Cargo test
         run: cargo test --workspace --all-features
       - name: Cargo clippy
         run: cargo clippy --workspace --all-features -- -D warnings
 
-  meta:
-    needs: guardrails
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Validate truth map
-        run: python blueprint/scripts/validate_truth_map.py
-      - name: Generate agents
-        run: python blueprint/scripts/generate_agents.py
-      - name: Ensure no diff
-        run: git diff --exit-code
-      - name: TXT lint
-        run: bash blueprint/scripts/txt_lint.sh
-
-  bench_smoke:
-    needs: guardrails
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Bench smoke
-        run: python blueprint/goni-lab/goni_lab.py bench --scenario blueprint/goni-lab/scenarios/mixed.json
-
-  demo_smoke:
+  demo-smoke:
     needs: rust
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: blueprint/software/kernel
     steps:
       - uses: actions/checkout@v4
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          components: clippy
-          override: true
-      - name: Smoke test (local)
-        run: bash ../../scripts/run_smoke_local.sh
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Orchestrator smoke test with local LLM stub
+        run: bash scripts/run_smoke_local.sh

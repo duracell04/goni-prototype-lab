@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "canonical_repository": "https://github.com/duracell04/goni",
+  "baseline_revision": "66b954ceb474004d6304fd1fb280804bae3e7e6b",
+  "final_revision": null,
+  "pin_state": "awaiting_final_migration_sha",
+  "replacement_policy": {
+    "placeholder": null,
+    "required_revision_format": "full_lowercase_git_sha",
+    "required_by": "final integration commit",
+    "instructions": "Replace final_revision with the final 40-character goni migration commit and set pin_state to pinned."
+  },
+  "relevant_node_ids": [
+    "ADR-INDEX-SW",
+    "AGENT-MANIFEST-01",
+    "AXIOMS-01",
+    "CI-VALIDATION-01",
+    "ITCR-01",
+    "LSC-01",
+    "NET-01",
+    "PRIV-01",
+    "REC-01",
+    "SCHED-01",
+    "SCHEMA-DSL-01",
+    "SPINE-01",
+    "SS-01",
+    "TOOL-01",
+    "ZCO-01"
+  ],
+  "evidence_policy": {
+    "submission_requires_full_commit_sha": true,
+    "submission_requires_test_boundary": true,
+    "submission_requires_limitations": true,
+    "may_promote_canonical_status": false,
+    "may_redefine_canonical_nodes": false
+  }
+}

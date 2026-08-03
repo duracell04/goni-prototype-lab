@@ -1,5 +1,5 @@
 // frontend/lib/content.ts
-// Generic content loader for Goni – scans ../README.md, ../docs, ../hardware, ../software.
+// Legacy lab content loader; it scans only this repository's local paths.
 // Only use from server-side code (Next.js server components / route handlers).
 
 import fs from "fs";
@@ -50,7 +50,7 @@ const SECTION_CONFIG: Record<SectionId, { baseDir: string | null; baseRoute: str
 function toGithubUrl(relPath: string): string {
   // Ensure posix-style slashes
   const norm = relPath.replace(/\\/g, "/");
-  return `https://github.com/duracell04/goni/blob/main/blueprint/${norm}`;
+  return `https://github.com/duracell04/goni-prototype-lab/blob/main/${norm}`;
 }
 
 function extractTitleFromContent(content: string, fallback: string): string {

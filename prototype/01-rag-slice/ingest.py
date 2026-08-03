@@ -1,11 +1,11 @@
 """
-Prototype Track 01 – Hello Deterministic RAG
+Prototype Track 01 â€“ Hello Deterministic RAG
 
 This script ingests markdown files into Qdrant and emits a tiny JSON log
 of what was ingested. It is designed to be deterministic and minimal.
 
 Usage (example):
-  python ingest.py --src ./docs ./hardware ./software \
+  python ingest.py --src ../goni/knowledge \
     --qdrant-url http://localhost:6333 \
     --collection goni-proto-01 \
     --embed-model sentence-transformers/all-MiniLM-L6-v2 \
